@@ -6,7 +6,6 @@ from numpy.random import default_rng
 import pandas as pd
 import make_standings_3
 from make_standings_3 import Standings
-from importlib import reload
 import altair as alt
 
 st.title('2021 NFL Regular Season Simulator')
