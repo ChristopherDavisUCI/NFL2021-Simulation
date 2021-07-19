@@ -195,7 +195,7 @@ else:
 
 st.markdown('''
 Explanations.  \n
-* All computations were made in Python.  This website was made using [Streamlit](https://streamlit.io/). You can download the source code from GitHub [link missing]()
+* All computations were made in Python.  This website was made using [Streamlit](https://streamlit.io/). You can download the source code from [Github](https://github.com/ChristopherDavisUCI/NFL2021-Simulation).
 * The plots were made using [Altair](https://altair-viz.github.io/). 
 In the plots from your simulation (not the placeholder images), put your mouse over the bars to get more data.
 * The thin black line represents the median win total for each team, so for example, if the line
