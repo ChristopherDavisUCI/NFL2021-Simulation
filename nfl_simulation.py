@@ -19,7 +19,14 @@ for conf in ["AFC","NFC"]:
     conf_teams[conf] = [t for t in teams if div_series[t][:3]==conf]
 rng = np.random.default_rng()
 
-reps = st.sidebar.number_input('Number of simulations to run:',value=10)
+
+
+def reps_changed():
+    st.session_state["rc"] = True
+
+
+
+reps = st.sidebar.number_input('Number of simulations to run:',value=10, on_change=reps_changed)
 
 st.sidebar.write("Set your power ratings:")
 
@@ -78,9 +85,14 @@ df["pr_away_Def"] = df.team_away.map(lambda s: pr_both[s+"_Def"])
 df["mean_home"] = df["pr_home_Off"]-df["pr_away_Def"]+pr_both["mean_score"]+pr_both["HFA"]/2
 df["mean_away"] = df["pr_away_Off"]-df["pr_home_Def"]+pr_both["mean_score"]-pr_both["HFA"]/2
 
-st.write("The simulation is based on each team's offensive and defensive power ratings.  See below for more details.")
+st.write('''The simulation is based on each team's offensive and defensive power ratings, 
+    which you can customize using the menu on the left.  Click the button to run the simulation.  See below for more details.''')
 
-if st.button("Run simulation"):
+if st.button("Run simulation") or ("rc" in st.session_state):
+    try:
+        del st.session_state["rc"]
+    except:
+        pass
     placeholder = st.empty()
     placeholder2 = st.empty()
     placeholder.text(f"Running {reps} simulations of the 2021 NFL regular season")
@@ -184,6 +196,9 @@ if st.button("Run simulation"):
 
     st.session_state['pc'] = playoff_charts
     st.session_state['wt'] = win_totals
+else:
+    st.write("")
+    st.write("")
 
 if 'pc' in st.session_state:
     st.write(st.session_state['pc'])
@@ -219,5 +234,7 @@ with the home team slightly more likely to win in overtime than the road team.
 * A team's overall power rating is the sum of its offensive power rating and its defensive power rating.  If we only care about wins and losses, and not the exact score, 
 then the team's overall power rating is sufficient.  Scores of games are relevant for [NFL playoff tiebreakers](https://www.nfl.com/standings/tie-breaking-procedures).
 * You can adjust the values of home field advantage and average team score at the bottom of the left-hand panel.
-* No promises that my code is accurate.  (The hardest/most tedious part was implementing the tie-breaking procedures.) Please report any bugs!
+* No promises that my code is accurate.  (The hardest/most tedious part was implementing the tie-breaking procedures.
+I believe all tie-breakers are incorporated except for the ones involving touchdowns.)
+* Please report any bugs!
 ''')
