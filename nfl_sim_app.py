@@ -144,7 +144,7 @@ elif pr_select == "Combined":
         pr["mean_score"] = st.slider(
             'Average team score',
             0.0, 40.0, float(pr_both["mean_score"]))
-        pr_ccomplete = make_pr_custom(pr)
+        pr_complete = make_pr_custom(pr)
 
 
 with st.sidebar:
