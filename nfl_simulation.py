@@ -4,9 +4,14 @@ import streamlit as st
 import numpy as np
 from numpy.random import default_rng
 import pandas as pd
-import make_standings_3
-from make_standings_3 import Standings
+import make_standings
+from make_standings import Standings
+from make_charts import make_playoff_charts, make_win_charts
+from itertools import permutations
 import altair as alt
+import time
+
+st.set_page_config(layout="wide")
 
 st.title('2021 NFL Regular Season Simulator')
 
@@ -19,44 +24,118 @@ for conf in ["AFC","NFC"]:
     conf_teams[conf] = [t for t in teams if div_series[t][:3]==conf]
 rng = np.random.default_rng()
 
+div_dict = {}
 
+s = div_series
+for a,b in s.groupby(s):
+    div_dict[a] = list(b.index)
 
 def reps_changed():
     st.session_state["rc"] = True
 
+def prob_to_odds(p):
+    if p < .000001:
+        return "NA"
+    if p > .999999:
+        return "NA"
+    if p > 0.5:
+        x = 100*p/(p-1)
+        return f"{x:.0f}"
+    elif p <= 0.5:
+        x = 100*(1-p)/p
+        return f"+{x:.0f}"
 
+max_reps = 10**4
 
-reps = st.sidebar.number_input('Number of simulations to run:',value=10, on_change=reps_changed)
+reps = st.sidebar.number_input('Number of simulations to run:',value=10, min_value = 1, max_value = max_reps, help = f'''The maximum allowed value is {max_reps}.''',on_change=reps_changed)
 
-st.sidebar.write("Set your power ratings:")
+format_dict = {"Combined": "Combined (one rating per team)",
+            "Separate":"Separate offensive/defensive ratings"}
 
-col1, col2 = st.sidebar.beta_columns(2)
+pr_select = st.sidebar.selectbox(
+        "Which type of power ratings do you want to use?",
+        options = ["Combined","Separate"],
+        format_func = lambda s: format_dict[s],
+        index = 0,
+        on_change=reps_changed
+    )
+
+info_col0, info_col1 = st.sidebar.beta_columns((3,1))
+
+with st.sidebar:
+
+    st.write("Set your power ratings.")
+
+    info_expander = st.beta_expander("Expand for more details.", expanded=False)
+
+with info_expander:
+    if pr_select == "Combined":
+        st.write("Each team's power rating represents the point spread against an average team on a neutral field.")
+        st.subheader('Example with default ratings:')
+        st.code('''
+Dallas plays in Tampa Week 1
+Tampa power rating: 5.46
+Dallas power rating: 0.92
+5.46 - 0.92 = 4.54
+We add 2.11 for home field:
+4.54 + 2.11 = 6.65''')
+        st.write('''That number 6.65 represents our predicted spread for Dallas at Tampa.''')
+        st.write("The team power rankings, 1-32, update live when you change the power ratings and are shown at the bottom of the main panel on the right.")
+    elif pr_select == "Separate":
+        st.write('''We use 23.82 as the average score of an average team in an NFL game.
+How much more or less a team scores than average is determined by the power ratings.''')
+        st.subheader('Example with default raings:')
+        st.code('''
+Dallas plays in Tampa Week 1
+Tampa offensive PR: 4.25
+Dallas defensive PR: -0.52
+4.25 - (-0.52) = 4.77
+We add 2.11/2 for home field:
+4.77 + (2.11/2) = 5.825''')
+        st.write('''That number 5.825 represents how many points more than 23.82 we expect Tampa to score.''')
+        st.write('''A team's overall power rating represents the point spread against an average team on a neutral field.
+A team's overall power rating is the sum of its offensive and defensive power ratings.''')
+        st.write("The team power rankings, 1-32, update live when you change the power ratings and are shown at the bottom of the main panel on the right.")
 
 off_pr = {}
 def_pr = {}
 
-with col1:
-    for t in teams:
-        off_pr[t] = st.slider(
-            f'{t} offense',
-            -10.0, 10.0, float(pr_both[t+"_Off"]))
-    st.write("")
-    off_pr["HFA"] = st.slider(
-        'Home field advantage',
-        0.0, 10.0, float(pr_both["HFA"]))
+if pr_select == "Separate":
+    col1, col2 = st.sidebar.beta_columns(2)
 
-with col2:
-    for t in teams:
-        def_pr[t] = st.slider(
-            f'{t} defense',
-            -10.0, 10.0, float(pr_both[t+"_Def"]))
-    st.write("")
-    off_pr["mean_score"] = st.slider(
-        'Average team score',
-        0.0, 40.0, float(pr_both["mean_score"]))
+    with col1:
+        for t in teams:
+            off_pr[t] = st.slider(
+                f'{t} offense',
+                -10.0, 10.0, float(pr_both[t+"_Off"]))
+        st.write("")
+        off_pr["HFA"] = st.slider(
+            'Home field advantage',
+            0.0, 10.0, float(pr_both["HFA"]))
 
-
-
+    with col2:
+        for t in teams:
+            def_pr[t] = st.slider(
+                f'{t} defense',
+                -10.0, 10.0, float(pr_both[t+"_Def"]))
+        st.write("")
+        off_pr["mean_score"] = st.slider(
+            'Average team score',
+            0.0, 40.0, float(pr_both["mean_score"]))
+elif pr_select == "Combined":
+    total_pr = {}
+    with st.sidebar:
+        for t in teams:
+            total_pr[t] = st.slider(
+                f'{t} power rating',
+                -15.0, 15.0, float(pr_both[t+"_Off"]+pr_both[t+"_Def"]))
+        st.write("")
+        total_pr["HFA"] = st.slider(
+            'Home field advantage',
+            0.0, 10.0, float(pr_both["HFA"]))
+        total_pr["mean_score"] = st.slider(
+            'Average team score',
+            0.0, 40.0, float(pr_both["mean_score"]))
 
 def simulate_reg_season(df):
     df.loc[:,["score_home","score_away"]] = rng.normal(df[["mean_home","mean_away"]],10)
@@ -72,11 +151,18 @@ def adjust_ties(df):
     df.loc[tied_games.index,["score_home","score_away"]] = tied_games
     return None
 
-for t in teams:
-    pr_both[t+"_Off"] = off_pr[t]
-    pr_both[t+"_Def"] = def_pr[t]
-pr_both["HFA"] = off_pr["HFA"]
-pr_both["mean_score"] = off_pr["mean_score"]
+if pr_select == "Separate":
+    for t in teams:
+        pr_both[t+"_Off"] = off_pr[t]
+        pr_both[t+"_Def"] = def_pr[t]
+    pr_both["HFA"] = off_pr["HFA"]
+    pr_both["mean_score"] = off_pr["mean_score"]
+elif pr_select == "Combined":
+    for t in teams:
+        pr_both[t+"_Off"] = total_pr[t]/2
+        pr_both[t+"_Def"] = total_pr[t]/2
+    pr_both["HFA"] = total_pr["HFA"]
+    pr_both["mean_score"] = total_pr["mean_score"]
 
 df["pr_home_Off"] = df.team_home.map(lambda s: pr_both[s+"_Off"])
 df["pr_home_Def"] = df.team_home.map(lambda s: pr_both[s+"_Def"])
@@ -85,10 +171,28 @@ df["pr_away_Def"] = df.team_away.map(lambda s: pr_both[s+"_Def"])
 df["mean_home"] = df["pr_home_Off"]-df["pr_away_Def"]+pr_both["mean_score"]+pr_both["HFA"]/2
 df["mean_away"] = df["pr_away_Off"]-df["pr_home_Def"]+pr_both["mean_score"]-pr_both["HFA"]/2
 
-st.write('''The simulation is based on each team's offensive and defensive power ratings, 
-    which you can customize using the menu on the left.  Click the button to run the simulation.  See below for more details.''')
+df_pr = pd.DataFrame({"Overall": {t:pr_both[t+"_Off"] + pr_both[t+"_Def"] for t in teams},
+        "Offensive":{t:pr_both[t+"_Off"] for t in teams}, "Defensive":{t:pr_both[t+"_Def"] for t in teams}}
+        )
 
-if st.button("Run simulation") or ("rc" in st.session_state):
+
+st.markdown('''Based on your power ratings, we use simulations of the 2021 regular season to estimate:\n* How likely is Cleveland to get the no. 1 seed?  To win its division?
+To make the playoffs?\n* How likely are the Steelers to win exactly 11 games?  To win 11 or more games?\n* What is the most likely exact finish 1-4 of teams in the AFC North?''')
+
+st.write('''In each simulation, a random outcome is generated for all 272 regular season games.  The outcomes are based on the power ratings (see below for more details).
+You should customize these power ratings on the left.  You can also adjust the offensive and defensive power ratings separately.
+The separate ratings are important for playoff tie-breakers, but for wins and losses, the overall power ratings are sufficient.
+Click the button below to run the simulation.''')
+
+button_cols1, button_cols2 = st.beta_columns((1,5))
+
+with button_cols1:
+    sim_button = st.button("Run simulation")
+
+with button_cols2:
+    time_holder = st.empty()
+
+if sim_button or ("rc" in st.session_state):
     try:
         del st.session_state["rc"]
     except:
@@ -104,6 +208,14 @@ if st.button("Run simulation") or ("rc" in st.session_state):
     for conf in ["AFC","NFC"]:
         total_dict[conf] = {i:{t:0 for t in sorted(conf_teams[conf])} for i in range(1,8)}
 
+    rank_dict = {div:{} for div in div_dict.keys()}
+
+    for div in rank_dict.keys():
+        for team_sort in permutations(div_dict[div]):
+            rank_dict[div][team_sort] = 0
+
+    start = time.time()
+
     for i in range(reps):
         simulate_reg_season(df)
         stand = Standings(df)
@@ -111,130 +223,129 @@ if st.button("Run simulation") or ("rc" in st.session_state):
         s_dict = dict(zip(s.index,s.Wins))
         for t,w in s_dict.items():
             win_dict[t][w] += 1
+        for d in rank_dict.keys():
+            rank_dict[d][tuple(stand.div_ranks[d])] += 1
         p = stand.playoffs
         for conf in ["AFC","NFC"]:
             for j,t in enumerate(p[conf]):
                 total_dict[conf][j+1][t] += 1
         bar.progress((i+1)/reps)
+
+    for d in rank_dict.keys():
+        rank_dict[d] = {i:j/reps for i,j in rank_dict[d].items()}
+
+    st.session_state["rd"] = rank_dict
+
+    end = time.time()
     
+    time_holder.write(f"{reps} simulations of the 2021 NFL regular season took {end - start:.1f} seconds.")
+
     placeholder.text("")
     placeholder2.text("")
-        
 
-    chart_dict = {}
+    playoff_charts = make_playoff_charts(total_dict)
 
-    for conf in ["AFC","NFC"]:
-
-        playoff_dicts = total_dict[conf]
-        
-        source = pd.DataFrame([(k,t,playoff_dicts[k][t]/reps) for k in playoff_dicts.keys() for t in conf_teams[conf]],
-            columns = ["Seed","Team","Proportion"])
-        
-        for a,b in source.groupby("Team"):
-            source.loc[source["Team"] == a, "Make playoffs"] = b.Proportion.sum()
-
-        ordering = sorted(conf_teams[conf],key=lambda t: sum([playoff_dicts[i][t] for i in playoff_dicts.keys()]),reverse=True)
-        c = alt.Chart(source).mark_bar().encode(
-            x=alt.X('Team',sort = ordering),
-            y=alt.Y('Proportion',scale=alt.Scale(domain=[0,1])),
-            tooltip = [alt.Tooltip('Seed', format=".0f"), alt.Tooltip('Proportion', format=".3f"),alt.Tooltip('Make playoffs', format=".3f")],
-            color=alt.Color('Seed:N', scale=alt.Scale(scheme='tableau10'))
-        ).properties(
-            title=f"{conf} playoff seedings"
-        )
-        
-        chart_dict[conf] = c
-        
-    playoff_charts = alt.hconcat(*chart_dict.values()).resolve_scale(
-        color='independent'
-    ).properties(
-        title=f"Based on {reps} simulations:"
-    )
-
-    win_charts = {}
-    for conf in ["AFC","NFC"]:
-        source = pd.DataFrame([(w,t,win_dict[t][w]/reps) for t in conf_teams[conf] for w in range(18)],
-                    columns = ["Wins","Team","Proportion"])
-        
-        for a,b in source.groupby("Team"):
-            source.loc[source["Team"] == a,"Equal or higher"] = 1 - b.Proportion.cumsum()
-        
-        source["Equal or higher"] += source["Proportion"]
-        
-        ordering = sorted(conf_teams[conf],
-            key = lambda t: sum([a*b for a,b in win_dict[t].items()])/reps, reverse = True)
-
-        ordering_wins = list(range(18,-1,-1))
-
-        c = alt.Chart(source).mark_bar().encode(
-                y=alt.Y('Team',sort = ordering),
-                x=alt.X('Proportion',scale=alt.Scale(domain=[0,1])),
-                tooltip = [alt.Tooltip('Wins', format=".0f"),
-                    alt.Tooltip('Proportion', format=".3f"),
-                    alt.Tooltip("Equal or higher", format=".3f")],
-                color=alt.Color('Wins:N', scale=alt.Scale(scheme='tableau20'),
-                            sort = ordering_wins),
-                order=alt.Order(
-                    'Wins:N',
-                    sort='descending'
-                )
-            ).properties(
-                title=f"{conf} win totals",
-            )
-
-        overlay = pd.DataFrame({'Proportion': [0.5]})
-        vline = alt.Chart(overlay).mark_rule(color='black', strokeWidth=.6).encode(x='Proportion:Q')
-
-        win_charts[conf] = c + vline
-
-
-    win_totals = alt.hconcat(*win_charts.values()).resolve_scale(
-        color='independent'
-    ).properties(
-        title=f"Based on {reps} simulations:"
-    )
+    win_charts = make_win_charts(win_dict)
 
     st.session_state['pc'] = playoff_charts
-    st.session_state['wt'] = win_totals
+    st.session_state['wt'] = win_charts
 else:
     st.write("")
     st.write("")
+
+def make_ranking(df,col):
+    return (-df[col]).rank()
+
 
 if 'pc' in st.session_state:
     st.write(st.session_state['pc'])
     st.write(st.session_state['wt'])
+    expand_div = st.beta_expander("Expand to see exact division outcomes.", expanded=False)
+    with expand_div:
+        show_div = st.selectbox(label="Display the most likely outcomes for this division:",options = div_dict.keys())
+        rank_dict = st.session_state["rd"]
+        sorted_order = sorted(rank_dict[show_div].keys(),key=lambda x: rank_dict[show_div][x],reverse=True)
+        st.write(f"Here are all the exact outcomes of {show_div} which occurred at least 1% of the time during the simulation:")
+        for i in [x for x in sorted_order if rank_dict[show_div][x] >= .01]:
+            st.write('  '.join([f"{n+1}.&nbsp{i[n]}&nbsp&nbsp" for n in range(4)])+f"&nbsp&nbsp Proportion: {rank_dict[show_div][i]}")
 else:
-    st.write("Sample images:")
-    st.image("data/pc_holder.png")
-    st.image("data/wt_holder.png")
+    st.header("Sample images:")
+    st.write('(To replace the sample images with real images, press the "Run simulation" button above.)')
+    c_image, c_text = st.beta_columns(2)
+    with c_image:
+        st.image("data/pc_holder.png")
+    with c_text:
+        
+        st.subheader("How to interpret the playoff seeding image.")
+        st.markdown('''The AFC playoff seeding image shows the probability of different teams getting different playoff seeds, according to our simulations.\n\nFor example:
+* Kansas City has over a 90% chance of making the playoffs, while Houston has less than a 5% chance.
+* Kansas City is much more likely to get a 1 seed (dark blue bar) than Indianapolis (about 30% vs 5%).
+* But Kansas City is much less likely to get a 4 seed (light blue bar) than Indianoplis (about 10% vs 25%). 
+* Kansas City has over a 70% chance of getting a top 4 seed (dark blue + orange + red + light blue), while Indianapolis has about a 56% chance of getting a top 4 seed.
+(Getting a top 4 seed is the same as winning the division.)\n\n
+For more precise numbers, place your mouse over a bar in one of the real images (not the sample images).
+The displayed text in our sample image shows that, according to our simulations:
+* Cleveland has a 5% chance of getting a 4 seed;
+* Cleveland has a 36.2% chance of winning its division;
+* Cleveland has a 69.4% chance of making the playoffs.    
+* The odds corresponding to these probabilities are +1900, +176, -227, respectively.''')
+    c_image, c_text = st.beta_columns(2)
+    with c_image:
+        st.image("data/wt_holder.png")
+    with c_text:
+        st.subheader("How to interpret the win total image.")
+        st.markdown('''The AFC win total image shows the probability, according to our simulations, of different teams having a specific number of wins at the end of the 2021 regular season.
+The thin black line represents the median win total for each team.\n\nFor example:
+* The thin black vertical line passes through the median win total for each team.  The median win total for Kansas City is 12, the median win total for Cleveland is 10, while the median win total for Houston is 5.
+* It looks like Baltimore has about a 48% chance of winning more than 10 games (the area to the left of the yellow bar), 
+about a 32% chance of winning less than 10 games (the area to the right of the yellow bar), and about a 20% chance of winning exactly 10 games (the yellow bar).
+* Pittsburgh has a 10.2% chance of winning exactly 11 games, and a 17.6% chance of winning at least 11 games.''')
 
-st.markdown('''
-Explanations.  \n
-* All computations were made in Python.  This website was made using [Streamlit](https://streamlit.io/). You can download the source code from [Github](https://github.com/ChristopherDavisUCI/NFL2021-Simulation).
-* The plots were made using [Altair](https://altair-viz.github.io/). 
-In the plots from your simulation (not the placeholder images), put your mouse over the bars to get more data.
-* The thin black line represents the median win total for each team, so for example, if the line
-passes through the color for 9 wins, that means that the simulation suggests that 9 is the most fair number for that team's over/under win total.
-* Schedule data is taken from this excellent Kaggle dataset [NFL scores and betting data](https://www.kaggle.com/tobycrabtree/nfl-scores-and-betting-data).
-* The default power ratings were based on the season-long lines and totals at [Superbook](https://co.superbook.com/sports) as of July 16, 2021.
-* Here is an example of what I mean by offensive and defensive power ratings:  \n  \n 
-Dallas plays in Tampa in the first game of the 2021 NFL season.  \nTampa offensive 
-power rating: 4.25  \nDallas defense power rating: -0.52  \nDifference: 4.25 - (-0.52) = 4.77  
-We add 2.11/2 for home field advantage: 4.77 + (2.11/2) = 5.825  
-The average score of a team is 23.82.  
-So Tampa's expected score: 5.825 + 23.82 &#8776 29.65  \n
-Dallas's expected score against Tampa is computed in the same way, except in this case we subtract (2.11/2) for home field advantage rather than adding it.  
-Dallas's expected score: 1.44 - 1.21 - (2.11/2) + 23.82 &#8776 23   \n
-Our default power ratings imply a spread of 6.65 and an over/under of 52.65.  As of July 16th, the actual market numbers at Pinnacle were 6.5 and 51.5.
-* In the simulation, for each game, we compute the expected score for both teams as in the above example. 
-We then use a normal distribution with the expected score as the mean, and with 10 as the standard deviation.
-We then round to the nearest integer, and replace any negative scores with zero.
-* I didn't think much about dealing with ties.  I wrote some ad hoc code that gets rid of most ties (otherwise there were as many as ten ties per season), 
-with the home team slightly more likely to win in overtime than the road team.
-* A team's overall power rating is the sum of its offensive power rating and its defensive power rating.  If we only care about wins and losses, and not the exact score, 
-then the team's overall power rating is sufficient.  Scores of games are relevant for [NFL playoff tiebreakers](https://www.nfl.com/standings/tie-breaking-procedures).
-* You can adjust the values of home field advantage and average team score at the bottom of the left-hand panel.
-* No promises that my code is accurate.  (The hardest/most tedious part was implementing the tie-breaking procedures.
-I believe all tie-breakers are incorporated except for the ones involving touchdowns.)
-* Please report any bugs!
-''')
+df_rankings = pd.DataFrame({col:make_ranking(df_pr,col) for col in df_pr.columns})
+
+if pr_select == "Separate":
+    rankings = st.beta_expander("Expand to see the power rankings based on the current values. (Click a column header to expand.)", expanded=False)
+    with rankings:
+        st.dataframe(df_rankings.sort_values("Overall"),height=500)
+elif pr_select == "Combined":
+    rankings = st.beta_expander("Expand to see the power rankings based on the current values.", expanded=False)
+    with rankings:
+        st.dataframe(df_rankings[["Overall"]].sort_values("Overall").transpose())
+
+    
+#st.table(df_pr.style.format('{:.2f}')) 
+
+explanation = st.beta_expander("Expand for more details about the process.", expanded=False)
+
+with explanation:
+    st.subheader("Explanations")
+    st.markdown('''
+    * All computations were made in Python.   You can download the source code from [Github](https://github.com/ChristopherDavisUCI/NFL2021-Simulation).
+    * This website was made using [Streamlit](https://streamlit.io/).
+    * The plots were made using [Altair](https://altair-viz.github.io/). 
+    In the plots from your simulation (not the placeholder images), put your mouse over the bars to get more data.
+    * The thin black line represents the median win total for each team, so for example, if the line
+    passes through the color for 9 wins, that means that the simulation suggests that 9 is the most fair number for that team's over/under win total.
+    * Schedule data is taken from this excellent Kaggle dataset [NFL scores and betting data](https://www.kaggle.com/tobycrabtree/nfl-scores-and-betting-data).
+    * The default power ratings were computed based on the season-long lines and totals at [Superbook](https://co.superbook.com/sports) as of July 16, 2021.
+    * By our convention, if you set the overall power rating, then the offensive and defensive power ratings are both exactly half the overall power rating.
+    And if you set the offensive and defensive power ratings, then the overall power rating is their sum.  So you can only adjust one type of power rating (separate or combined) at a time.
+    * In the simulation, for each game, we compute the expected score for both teams using the power ratings.  (See the examples in the left-hand panel.) 
+    We then use a normal distribution with the expected score as the mean, and with 10 as the standard deviation.
+    We then round to the nearest integer, and replace any negative scores with zero.
+    * I didn't think much about dealing with ties.  I wrote some ad hoc code that gets rid of most ties, 
+    with the home team slightly more likely to win in overtime than the road team.  (Without this ad hoc code, there were as many as ten ties per season.)
+    * You can adjust the values of home field advantage and average team score at the bottom of the left-hand panel.
+    * No promises that my code is accurate.  (The hardest/most tedious part was implementing the tie-breaking procedures. I believe all tie-breakers are incorporated except for the tie-breakers involving touchdowns.)
+    * Please report any bugs!
+    ''')
+
+follow = st.beta_expander("Possible follow-ups.", expanded=False)
+
+with follow:
+    st.subheader("Follow-ups with implementations in Deepnote")
+    st.markdown('''* Given an over-under win total for a specific team, estimate what the fair odds should be.  (Warning.  If the over-under win total is 9, for example,
+the fair odds for "over 9" does not correspond directly to the probability of the team winning 10 or more games, because pushes are different from losses.)''')
+    st.subheader("Follow-ups not yet implemented")
+    st.markdown('''* Extend the simulations to include the playoffs.  Create charts showing which teams win the super bowl,
+reach the super bowl, and reach the conference championship games most often.''')
