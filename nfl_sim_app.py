@@ -171,7 +171,7 @@ Click the button below to run the simulation.''')
 button_cols1, button_cols2 = st.beta_columns((1,5))
 
 with button_cols1:
-    sim_button = st.button("Run simulation")
+    sim_button = st.button("Run simulations")
 
 with button_cols2:
     time_holder = st.empty()
@@ -181,16 +181,19 @@ if sim_button or ("rc" in st.session_state):
         del st.session_state["rc"]
     except:
         pass
-    placeholder = st.empty()
-    placeholder2 = st.empty()
-    placeholder.text(f"Running {reps} simulations of the 2021 NFL regular season")
-    bar = placeholder2.progress(0.0)
-    
+    st.header("Simulation results")
+    placeholder0 = st.empty()
+    placeholder1 = st.empty()
+    placeholder0.text(f"Running {reps} simulations of the 2021 NFL regular season")
+    bar = placeholder1.progress(0.0)
+    st.write("")
 
-    total_dict = {}
-    win_dict = {t:{i:0 for i in range(18)} for t in teams}
+    playoff_dict = {}
+    
     for conf in ["AFC","NFC"]:
-        total_dict[conf] = {i:{t:0 for t in sorted(conf_teams[conf])} for i in range(1,8)}
+        playoff_dict[conf] = {i:{t:0 for t in sorted(conf_teams[conf])} for i in range(1,8)}
+
+    win_dict = {t:{i:0 for i in range(18)} for t in teams}
 
     rank_dict = {div:{} for div in div_dict.keys()}
 
@@ -203,16 +206,18 @@ if sim_button or ("rc" in st.session_state):
     for i in range(reps):
         df = simulate_reg_season(pr)
         stand = Standings(df)
-        s = stand.standings
-        s_dict = dict(zip(s.index,s.Wins))
-        for t,w in s_dict.items():
-            win_dict[t][w] += 1
-        for d in rank_dict.keys():
-            rank_dict[d][tuple(stand.div_ranks[d])] += 1
+
         p = stand.playoffs
         for conf in ["AFC","NFC"]:
             for j,t in enumerate(p[conf]):
-                total_dict[conf][j+1][t] += 1
+                playoff_dict[conf][j+1][t] += 1
+        for t in teams:
+            w = stand.standings.loc[t,"Wins"]
+            win_dict[t][w] += 1
+        
+        for d in rank_dict.keys():
+            rank_dict[d][tuple(stand.div_ranks[d])] += 1
+        
         bar.progress((i+1)/reps)
 
     for d in rank_dict.keys():
@@ -224,25 +229,21 @@ if sim_button or ("rc" in st.session_state):
     
     time_holder.write(f"{reps} simulations of the 2021 NFL regular season took {end - start:.1f} seconds.")
 
-    placeholder.text("")
-    placeholder2.text("")
-
-    playoff_charts = make_playoff_charts(total_dict)
+    playoff_charts = make_playoff_charts(playoff_dict)
 
     win_charts = make_win_charts(win_dict)
 
     st.session_state['pc'] = playoff_charts
     st.session_state['wt'] = win_charts
-else:
-    st.write("")
-    st.write("")
+
 
 def make_ranking(df,col):
     return (-df[col]).rank()
 
 def make_sample():
     st.header("Sample images:")
-    st.write('(To replace the sample images with real images, press the "Run simulation" button above.)')
+    if "pc" not in st.session_state:
+        st.write('(To replace the sample images with real images, press the "Run simulations" button above.)')
     c_image, c_text = st.beta_columns(2)
     with c_image:
         st.image("data/pc_holder.png")
@@ -273,22 +274,16 @@ about a 32% chance of winning less than 10 games (the area to the right of the y
 * Pittsburgh has a 10.2% chance of winning exactly 11 games, and a 17.6% chance of winning at least 11 games.''')
 
 if 'pc' in st.session_state:
-    expand_sample = st.beta_expander("Expand to show the sample images", expanded=False)
-    with expand_sample:
-        make_sample()
-    st.header("Simulation results:")
-    st.write(st.session_state['pc'])
-    st.write(st.session_state['wt'])
-    expand_div = st.beta_expander("Expand to see exact division outcomes.", expanded=False)
-    with expand_div:
-        show_div = st.selectbox(label="Display the most likely outcomes for this division:",options = div_dict.keys())
-        rank_dict = st.session_state["rd"]
-        sorted_order = sorted(rank_dict[show_div].keys(),key=lambda x: rank_dict[show_div][x],reverse=True)
-        st.write(f"Here are all the exact outcomes for the {show_div} which occurred at least 1% of the time during the simulation:")
-        for i in [x for x in sorted_order if rank_dict[show_div][x] >= .01]:
-            st.write('  '.join([f"{n+1}.&nbsp{i[n]}&nbsp&nbsp" for n in range(4)])+f"&nbsp&nbsp Proportion: {rank_dict[show_div][i]:.3f}")
+    try:
+        placeholder0.write(st.session_state['pc'])
+        placeholder1.write(st.session_state['wt'])
+    except:
+        st.header("Simulation results")
+        st.write(st.session_state['pc'])
+        st.write(st.session_state['wt'])
 else:
     make_sample()
+    
 
 df_rankings = pd.DataFrame({col:make_ranking(df_pr,col) for col in df_pr.columns})
 
@@ -300,6 +295,23 @@ elif pr_select == "Combined":
     rankings = st.beta_expander("Expand to see the power rankings based on the current values.", expanded=False)
     with rankings:
         st.dataframe(df_rankings[["Overall"]].sort_values("Overall").transpose())
+
+expand_div = st.beta_expander("Expand to see exact division outcomes.", expanded=False)
+with expand_div:
+    if "rd" in st.session_state:
+        show_div = st.selectbox(label="Display the most likely outcomes for this division:",options = div_dict.keys())
+        rank_dict = st.session_state["rd"]
+        sorted_order = sorted(rank_dict[show_div].keys(),key=lambda x: rank_dict[show_div][x],reverse=True)
+        st.write(f"Here are all the exact outcomes for the {show_div} which occurred at least 1% of the time during the simulation:")
+        for i in [x for x in sorted_order if rank_dict[show_div][x] >= .01]:
+            st.write('  '.join([f"{n+1}.&nbsp{i[n]}&nbsp&nbsp" for n in range(4)])+f"&nbsp&nbsp Proportion: {rank_dict[show_div][i]:.3f}")
+    else:
+        st.write('No data yet.  Press the "Run simulations" button above.')
+
+if 'pc' in st.session_state:
+    expand_sample = st.beta_expander("Expand to show the sample images and explanations", expanded=False)
+    with expand_sample:
+        make_sample()
 
 explanation = st.beta_expander("Expand for more details about the process.", expanded=False)
 
@@ -313,16 +325,14 @@ In the plots from your simulation (not the placeholder images), put your mouse o
 * The thin black line represents the median win total for each team, so for example, if the line
 passes through the color for 9 wins, that means that the simulation suggests that 9 is the most fair number for that team's over/under win total.
 * Schedule data is taken from this excellent Kaggle dataset [NFL scores and betting data](https://www.kaggle.com/tobycrabtree/nfl-scores-and-betting-data).
-* The default power ratings were computed based on the season-long lines and totals at [Superbook](https://co.superbook.com/sports) as of July 16, 2021.
-* By our convention, if you set the overall power rating, then the offensive and defensive power ratings are both exactly half the overall power rating.
-And if you set the offensive and defensive power ratings, then the overall power rating is their sum.  So you can only adjust one type of power rating (separate or combined) at a time.
+* The default power ratings were computed based on the season-long lines and totals at [Superbook](https://co.superbook.com/sports) on July 16, 2021.
+* You cannot edit both the combined power ratings and the separate power ratings.  If you switch from combined to separate or vice versa, it will delete any changes you made to the other.
 * In the simulation, for each game, we compute the expected score for both teams using the power ratings.  (See the examples in the left-hand panel.) 
 We then use a normal distribution with the expected score as the mean, and with 10 as the standard deviation.
 We then round to the nearest integer, and replace any negative scores with zero.
-* I didn't think much about dealing with ties.  I wrote some ad hoc code that gets rid of most ties, 
-with the home team slightly more likely to win in overtime than the road team.  (Without this ad hoc code, there were as many as ten ties per season.)
 * You can adjust the values of home field advantage and average team score at the bottom of the left-hand panel.
-* No promises that my code is accurate.  (The hardest/most tedious part was implementing the tie-breaking procedures. I believe all tie-breakers are incorporated except for the tie-breakers involving touchdowns.)
+* No promises that my code is accurate.  (The hardest/most tedious part was implementing the tie-breaking procedures to determine playoff seedings. 
+I believe all tie-breakers are incorporated except for the tie-breakers involving touchdowns.)
 * Please report any bugs!
     ''')
 
@@ -330,10 +340,15 @@ follow = st.beta_expander("Possible follow-ups.", expanded=False)
 
 with follow:
     st.subheader("Follow-ups with implementations in Deepnote")
+    
     st.markdown('''* Given an over-under win total for a specific team, estimate what the fair odds should be.  (Warning.  If the over-under win total is 9, for example,
 the fair odds for "over 9" does not correspond directly to the probability of the team winning 10 or more games, because pushes need to be treated differently from losses.)''')
+    
     st.subheader("Follow-ups not yet implemented")
 
     st.markdown('''* Extend the simulations to include the playoffs.  Create charts showing which teams win the super bowl,
 reach the super bowl, and reach the conference championship games most often.
-* Our simulation does not take schedule into account.  Make a new version of the simulation which does.''')
+* Our simulation does not take the order of games played into account.  Make a new version of the simulation which does.  For example, add some value to teams coming off a bye, or as another example,
+let a team's power ranking evolve over the course of the season.
+* I didn't think much about dealing with ties.  I wrote some ad hoc code that gets rid of most ties, 
+with the home team slightly more likely to win in overtime than the road team.  (Without this ad hoc code, there were as many as ten ties per season.)  Come up with a more sophisticated solution.''')
