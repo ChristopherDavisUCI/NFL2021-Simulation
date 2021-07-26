@@ -160,7 +160,7 @@ df_pr = pd.DataFrame({"Overall": {t:pr_complete[t+"_Off"] + pr_complete[t+"_Def"
         )
 
 
-st.markdown('''Based on your power ratings, we use simulations of the 2021 regular season to estimate answers to questions like:\n* How likely is Cleveland to get the no. 1 seed?  To win its division?
+st.markdown('''Based on your power ratings, we use Python to run many simulations of the 2021 NFL regular season, and then estimate answers to questions like:\n* How likely is Cleveland to get the no. 1 seed?  To win its division?
 To make the playoffs?\n* How likely are the Steelers to win exactly 11 games?  To win 11 or more games?\n* How likely are the Patriots to finish 3rd in the AFC East?''')
 
 st.write('''In each simulation, a random outcome is generated for all 272 regular season games.  The outcomes are based on the power ratings (see below for more details).
@@ -348,7 +348,10 @@ explanation = st.beta_expander("Expand for more details about the process.", exp
 
 with explanation:
     st.subheader("Explanations")
-    st.markdown('''* All computations were made in Python.   You can download the source code from [Github](https://github.com/ChristopherDavisUCI/NFL2021-Simulation).
+    st.markdown('''* Warning! I'm not an expert on any of this material (not on Python, not on the NFL, not on random processes, not on simulating sports outcomes).
+The point of this page is not to provide "true" probabilities; instead is to show a first example of gathering data using free resources.  My hope is that you will
+think the process is interesting and will try to learn more about Python.
+* All computations were made in Python.   You can download the source code from [Github](https://github.com/ChristopherDavisUCI/NFL2021-Simulation).
 * You can duplicate and then edit this code in Deepnote.
 * This website was made using [Streamlit](https://streamlit.io/).
 * The plots were made using [Altair](https://altair-viz.github.io/). 
