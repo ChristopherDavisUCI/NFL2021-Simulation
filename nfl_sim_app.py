@@ -166,7 +166,12 @@ To make the playoffs?\n* How likely are the Steelers to win exactly 11 games?  T
 st.write('''In each simulation, a random outcome is generated for all 272 regular season games.  The outcomes are based on the power ratings (see below for more details).
 You should customize these power ratings on the left.  You can also adjust the offensive and defensive power ratings separately.
 The separate ratings are important for playoff tie-breakers, but for wins and losses, the overall power ratings are sufficient.
-Click the button below to run the simulation.''')
+Click the button below to run the simulation.  
+
+I hope you will want to try adapting some of this material yourself.
+Here is a [notebook on Deepnote](https://deepnote.com/project/NFL-2021-Simulation-XVJzHB7aTvGndVBV4CLYOA/%2FNFL2021-Simulation%2FNFL%20Simulation%20example%20using%20bye%20weeks.ipynb) 
+showing an example (it's free and no software needs to be installed).  The reason I wrote this app is not to provide highly accurate probabilities (I don't know how to do that); instead 
+I wanted to demonstrate some of the great free resources available in Python.''')
 
 button_cols1, button_cols2 = st.beta_columns((1,5))
 
@@ -332,7 +337,7 @@ elif pr_select == "Combined":
 expand_rank = st.beta_expander("Expand to see the division ranks.", expanded=False)
 with expand_rank:
     if "dc" in st.session_state:
-        st.write(f"Based on {reps} simulations:")
+        st.write(f"Based on {reps:.0f} simulations:")
         st.write(st.session_state["dc"])
     else:
         st.write('No data yet.  Press the "Run simulations" button above.')
@@ -349,10 +354,9 @@ explanation = st.beta_expander("Expand for more details about the process.", exp
 with explanation:
     st.subheader("Explanations")
     st.markdown('''* Warning! I'm not an expert on any of this material (not on Python, not on the NFL, not on random processes, not on simulating sports outcomes).
-The point of this page is not to provide "true" probabilities; instead is to show a first example of gathering data using free resources.  My hope is that you will
-think the process is interesting and will try to learn more about Python.
+The point of this page is not to provide "true" probabilities.  My hope is that you will
+think the process is interesting and will try to learn more about Python.  All of the resources I used are freely available.
 * All computations were made in Python.   You can download the source code from [Github](https://github.com/ChristopherDavisUCI/NFL2021-Simulation).
-* You can duplicate and then edit this code in Deepnote.
 * This website was made using [Streamlit](https://streamlit.io/).
 * The plots were made using [Altair](https://altair-viz.github.io/). 
 In the plots from your simulation (not the placeholder images), put your mouse over the bars to get more data.
@@ -375,6 +379,9 @@ follow = st.beta_expander("Possible follow-ups.", expanded=False)
 with follow:
     st.subheader("Follow-ups with implementations in Deepnote")
     
+    st.markdown('''* Adapt the code so that teams coming off of a bye week have slightly boosted power ratings.
+[Sample solution in Deepnote](https://deepnote.com/project/NFL-2021-Simulation-XVJzHB7aTvGndVBV4CLYOA/%2FNFL2021-Simulation%2FNFL%20Simulation%20example%20using%20bye%20weeks.ipynb)''')
+
     st.write("")
     
     st.subheader("Follow-ups not yet implemented")
@@ -383,7 +390,7 @@ with follow:
 the fair odds for "over 9" does not correspond directly to the probability of the team winning 10 or more games, because pushes need to be treated differently from losses.
 * Extend the simulations to include the playoffs.  Create charts showing which teams win the super bowl,
 reach the super bowl, and reach the conference championship games most often.
-* Our simulation does not take the order of games played into account.  Make a new version of the simulation which does.  For example, add some value to teams coming off a bye, or as another example,
-let a team's power ranking evolve over the course of the season.
+* One weakness of our simulation is that a team has the same power rating throughout the entire season.  In fact, the order in which games are played has no impact on our simulation.
+Adapt the code so that the power ratings evolve over the course of the season.
 * I didn't think much about dealing with ties.  I wrote some ad hoc code that gets rid of most ties, 
 with the home team slightly more likely to win in overtime than the road team.  (Without this ad hoc code, there were as many as ten ties per season.)  Come up with a more sophisticated solution.''')
