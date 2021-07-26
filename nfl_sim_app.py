@@ -1,9 +1,9 @@
 import streamlit as st
 from numpy.random import default_rng
 import pandas as pd
-from sim_season import simulate_reg_season, make_pr_custom
+from sim_21season import simulate_reg_season, make_pr_custom
 from make_standings import Standings
-from make_charts import make_playoff_charts, make_win_charts
+from make_charts import make_playoff_charts, make_win_charts, make_div_charts
 from itertools import permutations
 import time
 import base64
@@ -161,7 +161,7 @@ df_pr = pd.DataFrame({"Overall": {t:pr_complete[t+"_Off"] + pr_complete[t+"_Def"
 
 
 st.markdown('''Based on your power ratings, we use simulations of the 2021 regular season to estimate answers to questions like:\n* How likely is Cleveland to get the no. 1 seed?  To win its division?
-To make the playoffs?\n* How likely are the Steelers to win exactly 11 games?  To win 11 or more games?\n* What is the most likely exact finish 1-4 of teams in the AFC North?''')
+To make the playoffs?\n* How likely are the Steelers to win exactly 11 games?  To win 11 or more games?\n* How likely are the Patriots to finish 3rd in the AFC East?''')
 
 st.write('''In each simulation, a random outcome is generated for all 272 regular season games.  The outcomes are based on the power ratings (see below for more details).
 You should customize these power ratings on the left.  You can also adjust the offensive and defensive power ratings separately.
@@ -195,11 +195,16 @@ if sim_button or ("rc" in st.session_state):
 
     win_dict = {t:{i:0 for i in range(18)} for t in teams}
 
-    rank_dict = {div:{} for div in div_dict.keys()}
+    #rank_dict = {div:{} for div in div_dict.keys()}
+    rank_dict1 = {t:{} for t in teams}
 
-    for div in rank_dict.keys():
-        for team_sort in permutations(div_dict[div]):
-            rank_dict[div][team_sort] = 0
+    #for div in rank_dict.keys():
+    #    for team_sort in permutations(div_dict[div]):
+    #        rank_dict[div][team_sort] = 0
+
+    for t in teams:
+        for i in range(1,5):
+            rank_dict1[t][i] = 0
 
     start = time.time()
 
@@ -212,29 +217,34 @@ if sim_button or ("rc" in st.session_state):
             for j,t in enumerate(p[conf]):
                 playoff_dict[conf][j+1][t] += 1
         for t in teams:
-            w = stand.standings.loc[t,"Wins"]
-            win_dict[t][w] += 1
+            team_outcome = stand.standings.loc[t]
+            win_dict[t][team_outcome["Wins"]] += 1
+            rank_dict1[t][team_outcome["Division_rank"]] += 1
         
-        for d in rank_dict.keys():
-            rank_dict[d][tuple(stand.div_ranks[d])] += 1
+        #for d in rank_dict.keys():
+        #    rank_dict[d][tuple(stand.div_ranks[d])] += 1
         
         bar.progress((i+1)/reps)
 
-    for d in rank_dict.keys():
-        rank_dict[d] = {i:j/reps for i,j in rank_dict[d].items()}
+    #for d in rank_dict.keys():
+    #    rank_dict[d] = {i:j/reps for i,j in rank_dict[d].items()}
 
-    st.session_state["rd"] = rank_dict
+    #st.session_state["rd"] = rank_dict
 
     end = time.time()
     
     time_holder.write(f"{reps} simulations of the 2021 NFL regular season took {end - start:.1f} seconds.")
 
+
     playoff_charts = make_playoff_charts(playoff_dict)
 
     win_charts = make_win_charts(win_dict)
 
+    div_charts = make_div_charts(rank_dict1)
+
     st.session_state['pc'] = playoff_charts
-    st.session_state['wt'] = win_charts
+    st.session_state['wc'] = win_charts
+    st.session_state['dc'] = div_charts
 
 
 def make_ranking(df,col):
@@ -263,7 +273,7 @@ The displayed text in our sample image shows that, according to our simulations:
 * The odds corresponding to these probabilities are +1900, +176, -227, respectively.''')
     c_image, c_text = st.beta_columns(2)
     with c_image:
-        st.image("data/wt_holder.png")
+        st.image("data/wc_holder.png")
     with c_text:
         st.subheader("How to interpret the win total image.")
         st.markdown('''The AFC win total image shows the probability, according to our simulations, of different teams having a specific number of wins at the end of the 2021 regular season.
@@ -272,15 +282,26 @@ The thin black line represents the median win total for each team.\n\nFor exampl
 * It looks like Baltimore has about a 48% chance of winning more than 10 games (the area to the left of the yellow bar), 
 about a 32% chance of winning less than 10 games (the area to the right of the yellow bar), and about a 20% chance of winning exactly 10 games (the yellow bar).
 * Pittsburgh has a 10.2% chance of winning exactly 11 games, and a 17.6% chance of winning at least 11 games.''')
+    c_image, c_text = st.beta_columns(2)
+    with c_image:
+        st.image("data/dc_holder.png")
+    with c_text:
+        st.subheader("How to interpret the division ranks image.")
+        st.markdown('''The division ranks image shows the probability, of different teams finishing in a specific rank in their division.
+\n\nFor example, according to 200 simulations:
+* Buffalo has over a 60% chance of winning the AFC East, and the Jets have just under a 60% chance of finishing 4th in the AFC East.
+* The Patriots have a 30.5% chance of finishing in third place in the AFC East.
+\n\nThe teams are sorted in terms of how likely they are to win their division.  If all you care about is how likely is the team to win its division, then it's probably
+more convenient to use the playoff seedings image.''')
 
 if 'pc' in st.session_state:
     try:
         placeholder0.write(st.session_state['pc'])
-        placeholder1.write(st.session_state['wt'])
+        placeholder1.write(st.session_state['wc'])
     except:
         st.header("Simulation results")
         st.write(st.session_state['pc'])
-        st.write(st.session_state['wt'])
+        st.write(st.session_state['wc'])
 else:
     make_sample()
     
@@ -296,17 +317,27 @@ elif pr_select == "Combined":
     with rankings:
         st.dataframe(df_rankings[["Overall"]].sort_values("Overall").transpose())
 
-expand_div = st.beta_expander("Expand to see exact division outcomes.", expanded=False)
-with expand_div:
-    if "rd" in st.session_state:
-        show_div = st.selectbox(label="Display the most likely outcomes for this division:",options = div_dict.keys())
-        rank_dict = st.session_state["rd"]
-        sorted_order = sorted(rank_dict[show_div].keys(),key=lambda x: rank_dict[show_div][x],reverse=True)
-        st.write(f"Here are all the exact outcomes for the {show_div} which occurred at least 1% of the time during the simulation:")
-        for i in [x for x in sorted_order if rank_dict[show_div][x] >= .01]:
-            st.write('  '.join([f"{n+1}.&nbsp{i[n]}&nbsp&nbsp" for n in range(4)])+f"&nbsp&nbsp Proportion: {rank_dict[show_div][i]:.3f}")
+#expand_div = st.beta_expander("Expand to see exact division outcomes.", expanded=False)
+#with expand_div:
+#    if "rd" in st.session_state:
+#        show_div = st.selectbox(label="Display the most likely outcomes for this division:",options = div_dict.keys())
+#        rank_dict = st.session_state["rd"]
+#        sorted_order = sorted(rank_dict[show_div].keys(),key=lambda x: rank_dict[show_div][x],reverse=True)
+#        st.write(f"Here are all the exact outcomes for the {show_div} which occurred at least 1% of the time during the simulation:")
+#        for i in [x for x in sorted_order if rank_dict[show_div][x] >= .01]:
+#            st.write('  '.join([f"{n+1}.&nbsp{i[n]}&nbsp&nbsp" for n in range(4)])+f"&nbsp&nbsp Proportion: {rank_dict[show_div][i]:.3f}")
+#    else:
+#        st.write('No data yet.  Press the "Run simulations" button above.')
+
+expand_rank = st.beta_expander("Expand to see the division ranks.", expanded=False)
+with expand_rank:
+    if "dc" in st.session_state:
+        st.write(f"Based on {reps} simulations:")
+        st.write(st.session_state["dc"])
     else:
         st.write('No data yet.  Press the "Run simulations" button above.')
+
+
 
 if 'pc' in st.session_state:
     expand_sample = st.beta_expander("Expand to show the sample images and explanations", expanded=False)

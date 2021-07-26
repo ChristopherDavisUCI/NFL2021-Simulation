@@ -1,7 +1,7 @@
 import pandas as pd
 import altair as alt
 
-df = pd.read_csv("schedules/schedule21.csv")
+df = pd.read_csv("schedules/schedule2021.csv")
 div_series = pd.read_csv("data/divisions.csv",squeeze=True,index_col=0)
 teams = sorted(list(set(df.team_home)))
 conf_teams = {}
@@ -142,3 +142,37 @@ def make_win_charts(win_dict):
     )
 
     return win_totals
+
+def custom_sort(rd,div):
+    div_teams = list(div_series[div_series==div].index)
+    return sorted(div_teams,key = lambda t: rd[t][1], reverse=True)
+
+def make_div_charts(rd):
+
+    reps = sum(rd["ARI"].values())
+
+    source = pd.DataFrame([(t,j,rd[t][j]/reps,div_series[t],0) for t in teams for j in range(1,5)],
+            columns = ["Team","Rank","Proportion","Division","Odds"])
+
+    source["Odds"] = source["Proportion"].map(prob_to_odds)
+
+    output_dict = {}
+
+    for div in sorted(list(set(div_series))):
+
+        output_dict[div] = alt.Chart(source.query("Division==@div")).mark_bar().encode(
+            x = alt.X("Rank:O",title="Place"),
+            y = alt.Y("Proportion", scale=alt.Scale(domain=(0,1))),
+            color = alt.Color("Proportion",scale=alt.Scale(scheme="lighttealblue", domain=(0,1))),
+            column = alt.Column("Team:N", sort=custom_sort(rd,div)),
+            tooltip = ["Team","Division","Rank",alt.Tooltip('Proportion', format=".3f"),alt.Tooltip('Odds:N')]
+        ).properties(
+            title = div,
+            width = 100,
+            height = 250
+        )
+    return alt.vconcat(*output_dict.values()).resolve_scale(
+            color='independent'
+        ).configure_concat(
+            spacing=50
+        )

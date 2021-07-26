@@ -326,6 +326,8 @@ class Standings:
     standings = df_standings.copy()
     
     def __init__(self,df_scores):
+        if "schedule_playoff" in df_scores.columns:
+            df_scores = df_scores.loc[~df_scores["schedule_playoff"]].copy()
         df_ind = make_ind(df_scores)
         for a,b in df_ind.groupby("Team"):
             res = b.Outcome.value_counts()
@@ -335,6 +337,8 @@ class Standings:
         dw_unranked = get_div_winners(df_ind,self.standings)
         dw = rank_div_winners(dw_unranked, df_ind, self.standings)
         self.div_ranks = rank_within_divs(dw_unranked,df_ind,self.standings)
+        self.standings["Division_rank"] = self.standings.apply(lambda x: self.div_ranks[x["Division"]].index(x.name)+1, axis=1)
+        self.standings = self.standings.sort_values(["Division", "Division_rank"])
         wild_cards = {}
         div_eligible = {k:self.div_ranks[k][1:] for k in self.div_ranks.keys()}
         for conf in ["AFC","NFC"]:
