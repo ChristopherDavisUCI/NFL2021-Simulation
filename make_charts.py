@@ -1,7 +1,7 @@
 import pandas as pd
 import altair as alt
 
-df = pd.read_csv("schedules/schedule2021.csv")
+df = pd.read_csv("schedules/schedule21.csv")
 div_series = pd.read_csv("data/divisions.csv",squeeze=True,index_col=0)
 teams = sorted(list(set(df.team_home)))
 conf_teams = {}

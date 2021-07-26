@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from numpy.random import default_rng
 
-df = pd.read_csv("schedules/schedule2021.csv")
+df = pd.read_csv("schedules/schedule21.csv")
 pr_default = pd.read_csv("data/pr_both.csv",squeeze=True,index_col="Side")
 pr_custom = pd.Series()
 teams = sorted(list(set(df.team_home)))
@@ -26,7 +26,7 @@ def simulate_reg_season(pr = pr_default):
         df["mean_away"] = df["pr_away_Off"]-df["pr_home_Def"]+pr_custom["mean_score"]-pr["HFA"]/2
     scores = ["score_home","score_away"]
     df.loc[:,scores] = rng.normal(df[["mean_home","mean_away"]],10)
-    df.loc[:,scores] = df.loc[:,scores].astype(int)
+    df.loc[:,scores] = df.loc[:,scores].round()
     df[scores] = df[scores].mask(df[scores] < 0, 0)
     adjust_ties(df)
     return df
