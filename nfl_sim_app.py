@@ -387,7 +387,7 @@ with follow:
     st.subheader("Follow-ups not yet implemented")
 
     st.markdown('''* Given an over-under win total for a specific team, estimate what the fair odds should be.  (Warning.  If the over-under win total is 9, for example,
-the fair odds for "over 9" does not correspond directly to the probability of the team winning 10 or more games, because pushes need to be treated differently from losses.
+the fair odds for "over 9" does not correspond directly to the probability of the team winning 10 or more games, because pushes need to be treated differently from losses.)
 * Extend the simulations to include the playoffs.  Create charts showing which teams win the super bowl,
 reach the super bowl, and reach the conference championship games most often.
 * One weakness of our simulation is that a team has the same power rating throughout the entire season.  In fact, the order in which games are played has no impact on our simulation.
