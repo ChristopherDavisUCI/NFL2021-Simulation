@@ -51,7 +51,7 @@ def get_table_download_link(df,filename,text="Download csv file"):
     href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">{text}</a>'
     return href
 
-max_reps = 10**4
+max_reps = 2000
 
 reps = st.sidebar.number_input('Number of simulations to run:',value=10, min_value = 1, max_value = max_reps, help = f'''The maximum allowed value is {max_reps}.''',on_change=reps_changed)
 
@@ -372,12 +372,13 @@ follow = st.beta_expander("Possible follow-ups.", expanded=False)
 with follow:
     st.subheader("Follow-ups with implementations in Deepnote")
     
-    st.markdown('''* Given an over-under win total for a specific team, estimate what the fair odds should be.  (Warning.  If the over-under win total is 9, for example,
-the fair odds for "over 9" does not correspond directly to the probability of the team winning 10 or more games, because pushes need to be treated differently from losses.)''')
+    st.write("")
     
     st.subheader("Follow-ups not yet implemented")
 
-    st.markdown('''* Extend the simulations to include the playoffs.  Create charts showing which teams win the super bowl,
+    st.markdown('''* Given an over-under win total for a specific team, estimate what the fair odds should be.  (Warning.  If the over-under win total is 9, for example,
+the fair odds for "over 9" does not correspond directly to the probability of the team winning 10 or more games, because pushes need to be treated differently from losses.
+* Extend the simulations to include the playoffs.  Create charts showing which teams win the super bowl,
 reach the super bowl, and reach the conference championship games most often.
 * Our simulation does not take the order of games played into account.  Make a new version of the simulation which does.  For example, add some value to teams coming off a bye, or as another example,
 let a team's power ranking evolve over the course of the season.
