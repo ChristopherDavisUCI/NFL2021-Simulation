@@ -401,20 +401,20 @@ elif info_choice == "YouTube":
 
     
 
-    st.write("")
-    st.write("")
+    #st.write("")
+    #st.write("")
 
-    st.subheader("Playlist: Reading NFL point-spread data from html")
+    #st.subheader("Playlist: Reading NFL point-spread data from html")
 
-    st.write("")
+    #st.write("")
 
-    st.markdown('''<iframe width = 560 height = 315 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbIFxkUIdn57aLyfK40mOnBY" 
-        title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;" allowfullscreen="allowfullscreen"></iframe>''',
-                unsafe_allow_html=True)
+    #st.markdown('''<iframe width = 560 height = 315 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbIFxkUIdn57aLyfK40mOnBY" 
+    #    title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;" allowfullscreen="allowfullscreen"></iframe>''',
+    #            unsafe_allow_html=True)
 
-    st.write("Using pandas and regular expressions to get data from html code.")
+    #st.write("Using pandas and regular expressions to get data from html code.")
 
-    st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2Freading_html.ipynb) where you can try out the code yourself.")
+    #st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2Freading_html.ipynb) where you can try out the code yourself.")
 
     
     
