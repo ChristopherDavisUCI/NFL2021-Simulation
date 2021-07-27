@@ -29,6 +29,10 @@ for a,b in s.groupby(s):
 def reps_changed():
     st.session_state["rc"] = True
 
+def comb_changed():
+    if "pc" in st.session_state:
+        st.session_state["rc"] = True
+
 def prob_to_odds(p):
     if p < .000001:
         return "NA"
@@ -63,7 +67,7 @@ pr_select = st.sidebar.selectbox(
         options = ["Combined","Separate"],
         format_func = lambda s: format_dict[s],
         index = 0,
-        on_change=reps_changed
+        on_change=comb_changed
     )
 
 info_col0, info_col1 = st.sidebar.beta_columns((3,1))
@@ -168,7 +172,7 @@ st.write('''In each simulation, a random outcome is generated for all 272 regula
 (Warning.  Even if you set the absolute perfect power ratings, our simulation is too simple to provide true probabilities.  For example, 
 our simulation does not account for the possibility of injuries during the season.)
 
-If you're new to Python, I hope this app will make you want to try Python coding yourself.  All the tools I used are free, and most of them can be used online in Deepnote or Google Colab 
+If you're new to Python, I hope this app will make you want to try Python coding yourself.  Python is one of the fastest programming languages to learn.  All the tools I used are free, and most of them can be used online in Deepnote or Google Colab 
 without installing anything on your computer.  Below I've posted some introductory YouTube playlists introducing the main tools I used (especially the Python library pandas), as well as links to Deepnote notebooks
 where you can test out the tools yourself. 
 [Sample Deepnote notebook](https://deepnote.com/project/NFL-2021-Simulation-XVJzHB7aTvGndVBV4CLYOA/%2FNFL2021-Simulation%2Fnfl_sim_byes.ipynb)
@@ -263,7 +267,6 @@ def make_sample():
         st.write('(To replace the sample images with real images, press the "Run simulations" button above.)')
     c_image, c_text = st.beta_columns(2)
     with c_image:
-        
         st.image("images/pc_holder.png")
     with c_text:
         st.subheader("How to interpret the playoff seeding image.")
@@ -322,6 +325,7 @@ radio_dict = {
     "Sample": "The sample images and explanations.",
     "Details": "More details about the process.",
     "Follow": "Possible follow-ups.",
+    "Contact": "Contact"
 }
 
 info_choice = st.radio(
@@ -329,25 +333,32 @@ info_choice = st.radio(
     radio_dict.keys(),key="opt_radio",format_func=lambda k: radio_dict[k])
 
 if info_choice == "Rankings":
+    st.subheader("Power rankings 1-32 based on current values")
     if pr_select == "Separate":
         st.write("(Click a column header to sort.)")
-        st.dataframe(df_rankings.sort_values("Overall"),height=500)
+        st.dataframe(df_rankings.sort_values("Overall"),height=1000)
     elif pr_select == "Combined":
-        st.dataframe(df_rankings[["Overall"]].sort_values("Overall"),height=500)
+        st.dataframe(df_rankings[["Overall"]].sort_values("Overall"),height=1000)
+elif info_choice == "Contact":
+    st.markdown('')
+    st.markdown('''Made by [Christopher Davis](https://math.uci.edu/~davis)<br>daviscj@uci.edu<br>
+GitHub profile: [ChristopherDavisUCI](https://github.com/ChristopherDavisUCI). Source code for this app: [NFL2021-Simulation](https://github.com/ChristopherDavisUCI/NFL2021-Simulation)<br>
+Twitter profile: [@CDavis_UCI](https://twitter.com/cdavis_uci)''',unsafe_allow_html=True)
 elif info_choice == "Details":
     st.markdown('''* Warning! I'm not an expert on any of this material (not on Python, not on the NFL, not on random processes, not on simulating sports outcomes).
-The point of this page is not to provide "true" probabilities.  My hope is that you will
+The point of this page is not to provide "true" probabilities (I don't know how to compute those).  But my hope is that you will
 think the process is interesting and will try to learn more about Python.  All of the resources I used are freely available.
+* In the simulation, for each game, we compute the expected score for both teams using the power ratings.  (See the examples in the left-hand panel.) 
+We then use a normal distribution with the expected score as the mean, and with 10 as the standard deviation.  In the current implementation, only the matchups are relevant, 
+not the week in which the matchup occurs.
 * You can download the source code from [Github](https://github.com/ChristopherDavisUCI/NFL2021-Simulation).
 * This website was made using [Streamlit](https://streamlit.io/).
 * The plots were made using [Altair](https://altair-viz.github.io/). 
 In the plots from your simulation (not the placeholder images), put your mouse over the bars to get more data.
 * Schedule data was originally adapted from this excellent Kaggle dataset [NFL scores and betting data](https://www.kaggle.com/tobycrabtree/nfl-scores-and-betting-data).
-* The default power ratings were computed based on the season-long lines and totals at [Superbook](https://co.superbook.com/sports) on July 16, 2021.
+* The default power ratings were computed based on the season-long lines and totals at [Superbook](https://co.superbook.com/sports) on July 16, 2021.  Here is a 
+[YouTube playlist](https://www.youtube.com/watch?v=QvNcnS-2EOY&list=PLHfGN68wSbbJHhPIdsRuAXEsNW4ACgtjL) explaining the methodology (although using slightly different numbers).
 * You cannot edit both the combined power ratings and the separate power ratings.  If you switch from combined to separate or vice versa, it will delete any changes you made to the other.
-* In the simulation, for each game, we compute the expected score for both teams using the power ratings.  (See the examples in the left-hand panel.) 
-We then use a normal distribution with the expected score as the mean, and with 10 as the standard deviation.
-We then round to the nearest integer, and replace any negative scores with zero.
 * You can adjust the values of home field advantage and average team score at the bottom of the left-hand panel.
 * No promises that my code is accurate.  (The hardest/most tedious part was implementing the tie-breaking procedures to determine playoff seedings. 
 I believe all tie-breakers are incorporated except for the tie-breakers involving touchdowns.)
@@ -355,6 +366,7 @@ I believe all tie-breakers are incorporated except for the tie-breakers involvin
     ''')
 elif info_choice == "Division":
     if "dc" in st.session_state:
+        st.subheader("Division ranks")
         st.write(f"Based on {reps:.0f} simulations:")
         st.write(st.session_state["dc"])
     else:
@@ -425,3 +437,5 @@ Adapt the code so that the power ratings evolve over the course of the season.
 * I didn't think much about dealing with ties.  I wrote some ad hoc code that gets rid of most ties, 
 with the home team slightly more likely to win in overtime than the road team.  (Without this ad hoc code, there were as many as ten ties per season.)  Come up with a more sophisticated solution.''')
 
+st.markdown('___')
+st.markdown("Disclaimer: This app is for Educational and Entertainment purposes only.  The app has no connection to any organizations nor to any individuals other than the author.")
