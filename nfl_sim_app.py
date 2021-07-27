@@ -170,7 +170,8 @@ our simulation does not account for the possibility of injuries during the seaso
 
 If you're new to Python, I hope this app will make you want to try Python coding yourself.  All the tools I used are free, and most of them can be used online in Deepnote or Google Colab 
 without installing anything on your computer.  Below I've posted some introductory YouTube playlists introducing the main tools I used (especially the Python library pandas), as well as links to Deepnote notebooks
-where you can test out the tools yourself.
+where you can test out the tools yourself. 
+[Sample Deepnote notebook](https://deepnote.com/project/NFL-2021-Simulation-XVJzHB7aTvGndVBV4CLYOA/%2FNFL2021-Simulation%2Fnfl_sim_byes.ipynb)
 
 Click the button below to run the simulation.''')
 
@@ -409,7 +410,7 @@ elif info_choice == "Follow":
     st.subheader("Follow-ups with implementations in Deepnote")
     
     st.markdown('''* Adapt the code so that teams coming off of a bye week have slightly boosted power ratings.
-[Sample solution in Deepnote](https://deepnote.com/project/NFL-2021-Simulation-XVJzHB7aTvGndVBV4CLYOA/%2FNFL2021-Simulation%2FNFL%20Simulation%20example%20using%20bye%20weeks.ipynb)''')
+[Sample solution in Deepnote](https://deepnote.com/project/NFL-2021-Simulation-XVJzHB7aTvGndVBV4CLYOA/%2FNFL2021-Simulation%2Fnfl_sim_byes.ipynb)''')
     
     st.subheader("Follow-ups not yet implemented")
 
