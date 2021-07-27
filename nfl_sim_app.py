@@ -89,6 +89,7 @@ We add 2.11 for home field:
 be a Tampa victory by 6.65 points.''')
         st.write("The team power rankings, 1-32, are shown at the bottom of the main panel on the right.")
     elif pr_select == "Separate":
+        st.write("These separate ratings are important for playoff tie-breakers, but for wins and losses, the overall power ratings are sufficient.")
         st.write('''We use 23.82 as the average score of an average team in an NFL game.
 How much more or less a team scores than average is determined by the power ratings.''')
         st.subheader('Example with default raings:')
@@ -163,15 +164,15 @@ df_pr = pd.DataFrame({"Overall": {t:pr_complete[t+"_Off"] + pr_complete[t+"_Def"
 st.markdown('''Based on your power ratings, we use Python to run many simulations of the 2021 NFL regular season, and then estimate answers to questions like:\n* How likely is Cleveland to get the no. 1 seed?  To win its division?
 To make the playoffs?\n* How likely are the Steelers to win exactly 11 games?  To win 11 or more games?\n* How likely are the Patriots to finish 3rd in the AFC East?''')
 
-st.write('''In each simulation, a random outcome is generated for all 272 regular season games.  The outcomes are based on the power ratings (see below for more details).
-You should customize these power ratings on the left.  You can also adjust the offensive and defensive power ratings separately.
-The separate ratings are important for playoff tie-breakers, but for wins and losses, the overall power ratings are sufficient.
-Click the button below to run the simulation.  
+st.write('''In each simulation, a random outcome is generated for all 272 regular season games.  The outcomes are based on the power ratings; you should customize these power ratings on the left.
+(Warning.  Even if you set the absolute perfect power ratings, our simulation is too simple to provide true probabilities.  For example, 
+our simulation does not account for the possibility of injuries during the season.)
 
-I hope you will want to try adapting some of this material yourself.
-Here is a [notebook on Deepnote](https://deepnote.com/project/NFL-2021-Simulation-XVJzHB7aTvGndVBV4CLYOA/%2FNFL2021-Simulation%2FNFL%20Simulation%20example%20using%20bye%20weeks.ipynb) 
-showing an example (it's free and no software needs to be installed).  The reason I wrote this app is not to provide highly accurate probabilities (I don't know how to do that); instead 
-I wanted to demonstrate some of the great free resources available in Python.''')
+If you're new to Python, I hope this app will make you want to try Python coding yourself.  All the tools I used are free, and most of them can be used online in Deepnote or Google Colab 
+without installing anything on your computer.  Below I've posted some introductory YouTube playlists introducing the main tools I used (especially the Python library pandas), as well as links to Deepnote notebooks
+where you can test out the tools yourself.
+
+Click the button below to run the simulation.''')
 
 button_cols1, button_cols2 = st.beta_columns((1,5))
 
@@ -261,6 +262,7 @@ def make_sample():
         st.write('(To replace the sample images with real images, press the "Run simulations" button above.)')
     c_image, c_text = st.beta_columns(2)
     with c_image:
+        
         st.image("images/pc_holder.png")
     with c_text:
         st.subheader("How to interpret the playoff seeding image.")
@@ -292,7 +294,7 @@ about a 32% chance of winning less than 10 games (the area to the right of the y
         st.image("images/dc_holder.png")
     with c_text:
         st.subheader("How to interpret the division ranks image.")
-        st.markdown('''The division ranks image shows the probability, of different teams finishing in a specific rank in their division.
+        st.markdown('''The division ranks image shows the probability of different teams finishing in specific ranks in their divisions.
 \n\nFor example, according to 200 simulations:
 * Buffalo has over a 60% chance of winning the AFC East, and the Jets have just under a 60% chance of finishing 4th in the AFC East.
 * The Patriots have a 30.5% chance of finishing in third place in the AFC East.
@@ -309,60 +311,37 @@ if 'pc' in st.session_state:
         st.write(st.session_state['wc'])
 else:
     make_sample()
-    
 
 df_rankings = pd.DataFrame({col:make_ranking(df_pr,col) for col in df_pr.columns})
+    
+radio_dict = {
+    "YouTube": "YouTube playlists and Deepnote notebooks introducing the Python tools used.",
+    "Rankings": "See the power rankings 1-32 based on the current values.",
+    "Division": "Probabilities for different division ranks.",
+    "Sample": "The sample images and explanations.",
+    "Details": "More details about the process.",
+    "Follow": "Possible follow-ups.",
+}
 
-if pr_select == "Separate":
-    rankings = st.beta_expander("Expand to see the power rankings based on the current values. (Click a column header to sort.)", expanded=False)
-    with rankings:
+info_choice = st.radio(
+    'Options for more information',
+    radio_dict.keys(),key="opt_radio",format_func=lambda k: radio_dict[k])
+
+if info_choice == "Rankings":
+    if pr_select == "Separate":
+        st.write("(Click a column header to sort.)")
         st.dataframe(df_rankings.sort_values("Overall"),height=500)
-elif pr_select == "Combined":
-    rankings = st.beta_expander("Expand to see the power rankings based on the current values.", expanded=False)
-    with rankings:
-        st.dataframe(df_rankings[["Overall"]].sort_values("Overall").transpose())
-
-#expand_div = st.beta_expander("Expand to see exact division outcomes.", expanded=False)
-#with expand_div:
-#    if "rd" in st.session_state:
-#        show_div = st.selectbox(label="Display the most likely outcomes for this division:",options = div_dict.keys())
-#        rank_dict = st.session_state["rd"]
-#        sorted_order = sorted(rank_dict[show_div].keys(),key=lambda x: rank_dict[show_div][x],reverse=True)
-#        st.write(f"Here are all the exact outcomes for the {show_div} which occurred at least 1% of the time during the simulation:")
-#        for i in [x for x in sorted_order if rank_dict[show_div][x] >= .01]:
-#            st.write('  '.join([f"{n+1}.&nbsp{i[n]}&nbsp&nbsp" for n in range(4)])+f"&nbsp&nbsp Proportion: {rank_dict[show_div][i]:.3f}")
-#    else:
-#        st.write('No data yet.  Press the "Run simulations" button above.')
-
-expand_rank = st.beta_expander("Expand to see the division ranks.", expanded=False)
-with expand_rank:
-    if "dc" in st.session_state:
-        st.write(f"Based on {reps:.0f} simulations:")
-        st.write(st.session_state["dc"])
-    else:
-        st.write('No data yet.  Press the "Run simulations" button above.')
-
-
-
-if 'pc' in st.session_state:
-    expand_sample = st.beta_expander("Expand to show the sample images and explanations", expanded=False)
-    with expand_sample:
-        make_sample()
-
-explanation = st.beta_expander("Expand for more details about the process.", expanded=False)
-
-with explanation:
-    st.subheader("Explanations")
+    elif pr_select == "Combined":
+        st.dataframe(df_rankings[["Overall"]].sort_values("Overall"),height=500)
+elif info_choice == "Details":
     st.markdown('''* Warning! I'm not an expert on any of this material (not on Python, not on the NFL, not on random processes, not on simulating sports outcomes).
 The point of this page is not to provide "true" probabilities.  My hope is that you will
 think the process is interesting and will try to learn more about Python.  All of the resources I used are freely available.
-* All computations were made in Python.   You can download the source code from [Github](https://github.com/ChristopherDavisUCI/NFL2021-Simulation).
+* You can download the source code from [Github](https://github.com/ChristopherDavisUCI/NFL2021-Simulation).
 * This website was made using [Streamlit](https://streamlit.io/).
 * The plots were made using [Altair](https://altair-viz.github.io/). 
 In the plots from your simulation (not the placeholder images), put your mouse over the bars to get more data.
-* The thin black line represents the median win total for each team, so for example, if the line
-passes through the color for 9 wins, that means that the simulation suggests that 9 is the most fair number for that team's over/under win total.
-* Schedule data is taken from this excellent Kaggle dataset [NFL scores and betting data](https://www.kaggle.com/tobycrabtree/nfl-scores-and-betting-data).
+* Schedule data was originally adapted from this excellent Kaggle dataset [NFL scores and betting data](https://www.kaggle.com/tobycrabtree/nfl-scores-and-betting-data).
 * The default power ratings were computed based on the season-long lines and totals at [Superbook](https://co.superbook.com/sports) on July 16, 2021.
 * You cannot edit both the combined power ratings and the separate power ratings.  If you switch from combined to separate or vice versa, it will delete any changes you made to the other.
 * In the simulation, for each game, we compute the expected score for both teams using the power ratings.  (See the examples in the left-hand panel.) 
@@ -373,16 +352,64 @@ We then round to the nearest integer, and replace any negative scores with zero.
 I believe all tie-breakers are incorporated except for the tie-breakers involving touchdowns.)
 * Please report any bugs!
     ''')
+elif info_choice == "Division":
+    if "dc" in st.session_state:
+        st.write(f"Based on {reps:.0f} simulations:")
+        st.write(st.session_state["dc"])
+    else:
+        st.write('No data yet.  Press the "Run simulations" button above.')
+elif info_choice == "YouTube":
+    col_width = 10
+    st.write("YouTube playlists introducing the main Python tools used.  For each playlist, there is an accompanying Deepnote notebook which can be edited.")
+    col0,_,col1,_,col2 = st.beta_columns((col_width,1,col_width,1,col_width))
+    with col0:
+        st.subheader("52.4% and -110 odds")
+        
+    with col1:
+        st.subheader("Calculating NFL power ratings from Spreads and Totals")
+        
+    with col2:
+        st.subheader("Reading NFL point-spread data from html")
+        
+    col0,_,col1,_,col2 = st.beta_columns((col_width,1,col_width,1,col_width))
+    with col0:
+        st.write("Examples using the Python libraries NumPy, pandas, Altair, and scikit-learn")
+    with col1:
+        st.write("Using linear regression and point spreads/totals to compute offensive and defensive power ratings.")
+    with col2:
+        st.write("Using pandas and regular expressions to get data from html code.")
 
-follow = st.beta_expander("Possible follow-ups.", expanded=False)
+    col0,_,col1,_,col2 = st.beta_columns((col_width,1,col_width,1,col_width))
+    with col0:
+        st.markdown(''' <iframe width = 390 height = 220 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbJ-z7mJ9F2OcbxjWp1A-efh" 
+                title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;" allowfullscreen="allowfullscreen"></iframe>''',
+                unsafe_allow_html=True)
+    with col1:
+        st.markdown('''<iframe width = 390 height = 220 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbJHhPIdsRuAXEsNW4ACgtjL" 
+        title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;" allowfullscreen="allowfullscreen"></iframe>''',
+                unsafe_allow_html=True)
+    with col2:
+        st.markdown('''<iframe width = 390 height = 220 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbIFxkUIdn57aLyfK40mOnBY" 
+        title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;" allowfullscreen="allowfullscreen"></iframe>''',
+                unsafe_allow_html=True)
 
-with follow:
+    col0,_,col1,_,col2 = st.beta_columns((col_width,1,col_width,1,col_width))
+    with col0:
+        st.write("")
+        st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2F524.ipynb) where you can try out the code yourself.")
+    with col1:
+        st.write("")
+        st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2Fpower_ratings.ipynb) where you can try out the code yourself.")
+    with col2:
+        st.write("")
+        st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2Freading_html.ipynb) where you can try out the code yourself.")
+elif info_choice == "Sample":
+    make_sample()
+elif info_choice == "Follow":
     st.subheader("Follow-ups with implementations in Deepnote")
     
     st.markdown('''* Adapt the code so that teams coming off of a bye week have slightly boosted power ratings.
 [Sample solution in Deepnote](https://deepnote.com/project/NFL-2021-Simulation-XVJzHB7aTvGndVBV4CLYOA/%2FNFL2021-Simulation%2FNFL%20Simulation%20example%20using%20bye%20weeks.ipynb)''')
-
-    st.write("")
     
     st.subheader("Follow-ups not yet implemented")
 
@@ -394,3 +421,4 @@ reach the super bowl, and reach the conference championship games most often.
 Adapt the code so that the power ratings evolve over the course of the season.
 * I didn't think much about dealing with ties.  I wrote some ad hoc code that gets rid of most ties, 
 with the home team slightly more likely to win in overtime than the road team.  (Without this ad hoc code, there were as many as ten ties per season.)  Come up with a more sophisticated solution.''')
+
