@@ -360,50 +360,52 @@ elif info_choice == "Division":
     else:
         st.write('No data yet.  Press the "Run simulations" button above.')
 elif info_choice == "YouTube":
-    col_width = 10
-    st.write("YouTube playlists introducing the main Python tools used.  For each playlist, there is an accompanying Deepnote notebook which can be edited.")
-    col0,_,col1,_,col2 = st.beta_columns((col_width,1,col_width,1,col_width))
-    with col0:
-        st.subheader("52.4% and -110 odds")
-        
-    with col1:
-        st.subheader("Calculating NFL power ratings from Spreads and Totals")
-        
-    with col2:
-        st.subheader("Reading NFL point-spread data from html")
-        
-    col0,_,col1,_,col2 = st.beta_columns((col_width,1,col_width,1,col_width))
-    with col0:
-        st.write("Examples using the Python libraries NumPy, pandas, Altair, and scikit-learn")
-    with col1:
-        st.write("Using linear regression and point spreads/totals to compute offensive and defensive power ratings.")
-    with col2:
-        st.write("Using pandas and regular expressions to get data from html code.")
 
-    col0,_,col1,_,col2 = st.beta_columns((col_width,1,col_width,1,col_width))
-    with col0:
-        st.markdown(''' <iframe width = 390 height = 220 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbJ-z7mJ9F2OcbxjWp1A-efh" 
+    st.write("YouTube playlists introducing the main Python tools used.  For each playlist, there is an accompanying Deepnote notebook which can be edited.")
+    st.subheader("Playlist: 52.4% and -110 odds")
+    st.write("")
+    st.markdown(''' <iframe width = 560 height = 315 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbJ-z7mJ9F2OcbxjWp1A-efh" 
                 title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;" allowfullscreen="allowfullscreen"></iframe>''',
                 unsafe_allow_html=True)
-    with col1:
-        st.markdown('''<iframe width = 390 height = 220 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbJHhPIdsRuAXEsNW4ACgtjL" 
-        title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;" allowfullscreen="allowfullscreen"></iframe>''',
-                unsafe_allow_html=True)
-    with col2:
-        st.markdown('''<iframe width = 390 height = 220 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbIFxkUIdn57aLyfK40mOnBY" 
+    st.write("Examples using the Python libraries NumPy, pandas, Altair, and scikit-learn")
+    st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2F524.ipynb) where you can try out the code yourself.")
+
+    
+
+    st.write("")
+    st.write("")
+        
+    st.subheader("Playlist: Calculating NFL power ratings from Spreads and Totals")
+
+    st.write("")
+
+    st.markdown('''<iframe width = 560 height = 315 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbJHhPIdsRuAXEsNW4ACgtjL" 
         title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;" allowfullscreen="allowfullscreen"></iframe>''',
                 unsafe_allow_html=True)
 
-    col0,_,col1,_,col2 = st.beta_columns((col_width,1,col_width,1,col_width))
-    with col0:
-        st.write("")
-        st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2F524.ipynb) where you can try out the code yourself.")
-    with col1:
-        st.write("")
-        st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2Fpower_ratings.ipynb) where you can try out the code yourself.")
-    with col2:
-        st.write("")
-        st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2Freading_html.ipynb) where you can try out the code yourself.")
+    st.write("Using linear regression and point spreads/totals to compute offensive and defensive power ratings.")
+
+    st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2Fpower_ratings.ipynb) where you can try out the code yourself.")
+
+    
+
+    st.write("")
+    st.write("")
+
+    st.subheader("Playlist: Reading NFL point-spread data from html")
+
+    st.write("")
+
+    st.markdown('''<iframe width = 560 height = 315 src="https://www.youtube.com/embed/videoseries?list=PLHfGN68wSbbIFxkUIdn57aLyfK40mOnBY" 
+        title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;" allowfullscreen="allowfullscreen"></iframe>''',
+                unsafe_allow_html=True)
+
+    st.write("Using pandas and regular expressions to get data from html code.")
+
+    st.markdown("Accompanying notebook in [Deepnote](https://deepnote.com/project/IntroNFL-5svnq68tSOGccRFoL48_jw/%2Freading_html.ipynb) where you can try out the code yourself.")
+
+    
+    
 elif info_choice == "Sample":
     make_sample()
 elif info_choice == "Follow":
