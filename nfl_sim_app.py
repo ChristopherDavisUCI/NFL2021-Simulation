@@ -261,7 +261,7 @@ def make_sample():
         st.write('(To replace the sample images with real images, press the "Run simulations" button above.)')
     c_image, c_text = st.beta_columns(2)
     with c_image:
-        st.image("data/pc_holder.png")
+        st.image("images/pc_holder.png")
     with c_text:
         st.subheader("How to interpret the playoff seeding image.")
         st.markdown('''The AFC playoff seeding image shows the probability of different teams getting different playoff seeds, according to our simulations.\n\nFor example:
@@ -278,7 +278,7 @@ The displayed text in our sample image shows that, according to our simulations:
 * The odds corresponding to these probabilities are +1900, +176, -227, respectively.''')
     c_image, c_text = st.beta_columns(2)
     with c_image:
-        st.image("data/wc_holder.png")
+        st.image("images/wc_holder.png")
     with c_text:
         st.subheader("How to interpret the win total image.")
         st.markdown('''The AFC win total image shows the probability, according to our simulations, of different teams having a specific number of wins at the end of the 2021 regular season.
@@ -289,7 +289,7 @@ about a 32% chance of winning less than 10 games (the area to the right of the y
 * Pittsburgh has a 10.2% chance of winning exactly 11 games, and a 17.6% chance of winning at least 11 games.''')
     c_image, c_text = st.beta_columns(2)
     with c_image:
-        st.image("data/dc_holder.png")
+        st.image("images/dc_holder.png")
     with c_text:
         st.subheader("How to interpret the division ranks image.")
         st.markdown('''The division ranks image shows the probability, of different teams finishing in a specific rank in their division.
